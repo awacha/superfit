@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>545</width>
+    <height>328</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="3" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox">
+     <property name="showGroupSeparator" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="decimals">
+      <number>16</number>
+     </property>
+     <property name="singleStep">
+      <double>0.000001000000000</double>
+     </property>
+     <property name="value">
+      <double>0.000001000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QCheckBox" name="checkBox">
+     <property name="text">
+      <string>Rescale parameters iteratively using the Jacobian</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QComboBox" name="comboBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Select the finite difference scheme for the numerical estimation of the Jacobian matrix&lt;/span&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;2-point: the default&lt;/li&gt;&lt;li&gt;3-point: more accurate, but requires twice as much operations&lt;/li&gt;&lt;li&gt;cs: uses complex steps, and while potentially the most accurate, it is applicable only when the fit function correctly handles complex inputs and can be analytically continued to the complex plane.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Method ‘lm’ always uses the ‘2-point’ scheme.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>2-point</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>3-point</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>cs</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Jacobian method:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>xtol:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>ftol:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Loss function:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Algorithm:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="algorithmComboBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Algorithm to perform minimization.&lt;/span&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;‘trf’ : Trust Region Reflective algorithm, particularly suitable for large sparse problems with bounds. Generally robust method.&lt;/li&gt;&lt;li&gt;‘dogbox’ : dogleg algorithm with rectangular trust regions, typical use case is small problems with bounds. Not recommended for problems with rank-deficient Jacobian.&lt;/li&gt;&lt;li&gt;‘lm’ : Levenberg-Marquardt algorithm as implemented in MINPACK. Doesn’t handle bounds and sparse Jacobians. Usually the most efficient method for small unconstrained problems.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>Trust Region Reflective</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Dogleg algorithm with rectangular trust regions</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Levenberg-Marquardt</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="lossFunctionComboBox">
+     <property name="toolTip">
+      <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Noto Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Determines the loss function:&lt;/span&gt;&lt;/p&gt;
+&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;‘linear’ (default) : rho(z) = z. Gives a standard least-squares problem.&lt;/li&gt;
+&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;‘soft_l1’ :rho(z) = 2 * ((1 + z)**0.5 - 1). The smooth approximation of l1 (absolute value) loss. Usually a good choice for robust least squares.&lt;/li&gt;
+&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;‘huber’ : rho(z) = z if z &amp;lt;= 1 else 2*z**0.5 - 1. Works similarly to ‘soft_l1’.&lt;/li&gt;
+&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;‘cauchy’ : rho(z) = ln(1 + z). Severely weakens outliers influence, but may cause difficulties in optimization process.&lt;/li&gt;
+&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;‘arctan’ : rho(z) = arctan(z). Limits a maximum loss on a single residual, has properties similar to ‘cauchy’.&lt;/li&gt;&lt;/ul&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Method ‘lm’ supports only ‘linear’ loss.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>linear</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>soft_l1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>huber</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>cauchy</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>arctan</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>gtol:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+     <property name="decimals">
+      <number>16</number>
+     </property>
+     <property name="value">
+      <double>0.000001000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QCheckBox" name="weightWithErrorsCheckBox">
+     <property name="text">
+      <string>Weight with Y errors</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+     <property name="decimals">
+      <number>16</number>
+     </property>
+     <property name="value">
+      <double>0.000001000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>Max. number of func. evaluations:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QSpinBox" name="spinBox">
+     <property name="specialValueText">
+      <string>automatic</string>
+     </property>
+     <property name="maximum">
+      <number>1000000</number>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

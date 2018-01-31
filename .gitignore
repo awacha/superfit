@@ -1,0 +1,6 @@
+*_ui.py
+.idea/
+*.egg-info/
+/dist/
+/build/
+*~
