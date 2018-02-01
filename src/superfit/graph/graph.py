@@ -62,7 +62,9 @@ class Graph(QtWidgets.QWidget, Ui_Form):
         except IndexError:
             dx = None
         if self.errorBarsCheckBox.isChecked():
-            self._dataline = self.axes.errorbar(x, y, dy, dx, '.')
+            self._dataline = self.axes.errorbar(x, y, dy, dx, 'b.')
+        else:
+            self._dataline = self.axes.plot(x,y, 'b.')[0]
         self._updateGraphScales()
         self.canvas.draw()
 
@@ -97,7 +99,7 @@ class Graph(QtWidgets.QWidget, Ui_Form):
         except AttributeError:
             pass
         self._fitline = None
-        self._fitline = self.axes.plot(self._fitcurve[:,0], self._fitcurve[:,1], 'r-')[0]
+        self._fitline = self.axes.plot(self._fitcurve[:,0], self._fitcurve[:,1], 'r-',zorder=10)[0]
         self._updateGraphScales()
         self.axes.relim()
         self.axes.autoscale(True, True, True)

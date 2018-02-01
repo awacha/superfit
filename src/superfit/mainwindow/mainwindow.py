@@ -1,11 +1,13 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 import numpy as np
 import fffs
+from typing import Dict
 from .mainwindow_ui import Ui_MainWindow
 from ..datasetselector import DataSetSelector
-from ..parameters import ParameterView
+from ..parameters import ParameterView, FitResults
 from ..modelselector import ModelSelector
 from ..lsqalgorithmselector import LSQAlgorithmSelector
+from ..correlation import CorrelationCoefficientsTable
 from ..graph import Graph
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -26,6 +28,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.modelselector = ModelSelector(self)
         self.parameterview = ParameterView(self)
         self.lsqalgorithmselector = LSQAlgorithmSelector(self)
+        self.correlationcoefficients = CorrelationCoefficientsTable(self)
         for text, attrname in [
             ('Load data...', 'dataselector'),
             ('Model function', 'modelselector'),
@@ -43,13 +46,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.dataselector.dataSetLoaded.connect(self.onDataLoaded)
         self.modelselector.modelSelected.connect(self.onModelSelected)
         self.parameterview.fitCurveChanged.connect(self.onFitCurveChanged)
+        self.parameterview.fitResultsReady.connect(self.onFitResultsReady)
+        self.lsqalgorithmselector.algorithmChanged.connect(self.onAlgorithmChanged)
         self.tabWidget.removeTab(0)
         self.graph = Graph(self)
         self.tabWidget.addTab(self.graph,'Data && fit')
 #        self.tabWidget.addTab(..., 'Model representation')
-#        self.tabWidget.addTab(..., 'Parameter correlation')
+        self.tabWidget.addTab(self.correlationcoefficients, 'Parameter correlation')
 #        self.tabWidget.addTab(..., 'Result && statistics')
         self.onModelSelected(self.modelselector.model())
+        self.onAlgorithmChanged(self.lsqalgorithmselector.algorithmKwargs())
+
+    def onFitResultsReady(self, fitresults:FitResults):
+        self.correlationcoefficients.setMatrix(
+            fitresults.correl_coeffs,
+            [p for p, f in zip(fitresults.paramnames, fitresults.paramfree) if f])
 
     def onDataLoaded(self, data:np.ndarray):
         self._data = data
@@ -60,6 +71,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def onModelSelected(self, model:fffs.ModelFunction):
         self._model = model
         self.parameterview.setModelFunc(self._model)
+
+    def onAlgorithmChanged(self, kwargs:Dict):
+        self.parameterview.setAlgorithmKwargs(kwargs)
 
     def plotData(self):
         self.graph.replotData()

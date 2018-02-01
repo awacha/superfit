@@ -15,7 +15,7 @@ class ModelSelector(QtWidgets.QWidget, Ui_Form):
         self.categoryComboBox.currentIndexChanged.connect(self.onCategoryChanged)
         self.subCategoryComboBox.currentIndexChanged.connect(self.onSubCategoryChanged)
         self.nameComboBox.currentIndexChanged.connect(self.onNameSelected)
-        self.categoryComboBox.addItems(fffs.categories())
+        self.categoryComboBox.addItems(sorted(fffs.categories()))
 
     def onCategoryChanged(self):
         try:
@@ -23,7 +23,7 @@ class ModelSelector(QtWidgets.QWidget, Ui_Form):
             self.subCategoryComboBox.clear()
         finally:
             self.subCategoryComboBox.blockSignals(False)
-        self.subCategoryComboBox.addItems(fffs.subcategories(self.categoryComboBox.currentText()))
+        self.subCategoryComboBox.addItems(sorted(fffs.subcategories(self.categoryComboBox.currentText())))
         self.subCategoryComboBox.setEnabled(True)
 
     def onSubCategoryChanged(self):
@@ -32,8 +32,8 @@ class ModelSelector(QtWidgets.QWidget, Ui_Form):
             self.nameComboBox.clear()
         finally:
             self.nameComboBox.blockSignals(False)
-        self.nameComboBox.addItems(fffs.models(self.categoryComboBox.currentText(),
-                                               self.subCategoryComboBox.currentText()))
+        self.nameComboBox.addItems(sorted(fffs.models(self.categoryComboBox.currentText(),
+                                               self.subCategoryComboBox.currentText())))
         self.nameComboBox.setEnabled(True)
 
     def onNameSelected(self):

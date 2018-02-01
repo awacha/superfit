@@ -15,7 +15,10 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="3" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox">
+    <widget class="QDoubleSpinBox" name="xtolDoubleSpinBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Tolerance for termination by the change of the independent variables&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The exact condition depends on the method used (&lt;span style=&quot; font-style:italic;&quot;&gt;x&lt;/span&gt; denotes the vector of the fitted parameters):&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ and ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(dx) &amp;lt; xtol * (xtol + norm(x))&lt;/span&gt;&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : &lt;span style=&quot; font-style:italic;&quot;&gt;Delta &amp;lt; xtol * norm(xs)&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;Delta&lt;/span&gt; is a trust-region radius and &lt;span style=&quot; font-style:italic;&quot;&gt;xs&lt;/span&gt; is the value of &lt;span style=&quot; font-style:italic;&quot;&gt;x&lt;/span&gt; scaled according to &lt;span style=&quot; font-style:italic;&quot;&gt;x_scale&lt;/span&gt; parameter&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="showGroupSeparator" stdset="0">
       <bool>false</bool>
      </property>
@@ -31,14 +34,14 @@
     </widget>
    </item>
    <item row="7" column="0" colspan="2">
-    <widget class="QCheckBox" name="checkBox">
+    <widget class="QCheckBox" name="jacRescaleCheckBox">
      <property name="text">
       <string>Rescale parameters iteratively using the Jacobian</string>
      </property>
     </widget>
    </item>
    <item row="2" column="1">
-    <widget class="QComboBox" name="comboBox">
+    <widget class="QComboBox" name="jacobianComboBox">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Select the finite difference scheme for the numerical estimation of the Jacobian matrix&lt;/span&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;2-point: the default&lt;/li&gt;&lt;li&gt;3-point: more accurate, but requires twice as much operations&lt;/li&gt;&lt;li&gt;cs: uses complex steps, and while potentially the most accurate, it is applicable only when the fit function correctly handles complex inputs and can be analytically continued to the complex plane.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Method ‘lm’ always uses the ‘2-point’ scheme.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
@@ -101,17 +104,17 @@
      </property>
      <item>
       <property name="text">
-       <string>Trust Region Reflective</string>
+       <string>trf</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Dogleg algorithm with rectangular trust regions</string>
+       <string>dogbox</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Levenberg-Marquardt</string>
+       <string>lm</string>
       </property>
      </item>
     </widget>
@@ -166,7 +169,10 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="5" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+    <widget class="QDoubleSpinBox" name="gtolDoubleSpinBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Tolerance for termination by the norm of the gradient&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The exact condition depends on a method used:&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(g_scaled, ord=inf) &amp;lt; gtol&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;g_scaled&lt;/span&gt; is the value of the gradient scaled to account for the presence of the bounds.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(g_free, ord=inf) &amp;lt; gtol&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;g_free&lt;/span&gt; is the gradient with respect to the variables which are not in the optimal state on the boundary.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : the maximum absolute value of the cosine of angles between columns of the Jacobian and the residual vector is less than &lt;span style=&quot; font-style:italic;&quot;&gt;gtol&lt;/span&gt;, or the residual vector is zero.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="decimals">
       <number>16</number>
      </property>
@@ -180,10 +186,16 @@ p, li { white-space: pre-wrap; }
      <property name="text">
       <string>Weight with Y errors</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item row="4" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+    <widget class="QDoubleSpinBox" name="ftolDoubleSpinBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Tolerance for termination by the change of the cost function&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The optimization process is stopped when &lt;span style=&quot; font-family:'Hack';&quot;&gt;dF &amp;lt; ftol * F&lt;/span&gt;, and there was an adequate agreement between a local quadratic model and the true model in the last step.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="decimals">
       <number>16</number>
      </property>
@@ -200,7 +212,10 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="6" column="1">
-    <widget class="QSpinBox" name="spinBox">
+    <widget class="QSpinBox" name="maxnfevSpinBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Maximum number of function evaluations before the termination&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The automatic choice depends on the method (n is the number of fitted parameters):&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ and ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;100 * n&lt;/span&gt;.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : &lt;span style=&quot; font-style:italic;&quot;&gt;100 * n * (n + 1)&lt;/span&gt; because ‘lm’ counts function calls in Jacobian estimation&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="specialValueText">
       <string>automatic</string>
      </property>
@@ -211,6 +226,17 @@ p, li { white-space: pre-wrap; }
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>algorithmComboBox</tabstop>
+  <tabstop>lossFunctionComboBox</tabstop>
+  <tabstop>jacobianComboBox</tabstop>
+  <tabstop>xtolDoubleSpinBox</tabstop>
+  <tabstop>ftolDoubleSpinBox</tabstop>
+  <tabstop>gtolDoubleSpinBox</tabstop>
+  <tabstop>maxnfevSpinBox</tabstop>
+  <tabstop>jacRescaleCheckBox</tabstop>
+  <tabstop>weightWithErrorsCheckBox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

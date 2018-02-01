@@ -1,1 +1,1 @@
-from .parameters import ParameterView
+from .parameters import ParameterView, FitResults

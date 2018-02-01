@@ -94,6 +94,17 @@ class ParameterModel(QtCore.QAbstractItemModel):
         self.parameter(index).ubound = newvalue
         self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
 
+    def changeLBoundActive(self, index:Union[int, str], newvalue:bool):
+        index = self._nametoindex(index)
+        self.parameter(index).lbound_reached = newvalue
+        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
+
+    def changeUBoundActive(self, index:Union[int, str], newvalue:bool):
+        index = self._nametoindex(index)
+        self.parameter(index).ubound_reached = newvalue
+        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
+
+
     def columnCount(self, parent: QtCore.QModelIndex = ...):
         return 6
     
@@ -171,10 +182,13 @@ class ParameterModel(QtCore.QAbstractItemModel):
             elif index.column()==5:
                 val = abs(self._data[index.row()].value)
                 unc = self._data[index.row()].uncertainty
-                if val>0.5*unc:
+                if unc>0.5*val:
                     return QtGui.QColor('orange')
-                elif val>unc:
+                elif unc>val:
                     return QtGui.QColor('red')
+                else:
+                    return None
+                    #return QtGui.QColor('green')
             return None
         return None
 
@@ -263,3 +277,7 @@ class ParameterModel(QtCore.QAbstractItemModel):
 
     def historySize(self):
         return len(self._history)
+
+    def __iter__(self):
+        for p in self._data:
+            yield p
