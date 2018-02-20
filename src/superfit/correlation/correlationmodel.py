@@ -27,7 +27,7 @@ class CorrelationCoefficientsModel(QtCore.QAbstractItemModel):
             if index.column() == index.row():
                 return QtGui.QColor.fromRgbF(1.0, 1.0, 1.0, 1.0)
             else:
-                val = min(1,max(0,abs(self._matrix[index.row(), index.column()])))
+                val = 1-min(1,max(0,abs(self._matrix[index.row(), index.column()])))
                 return QtGui.QColor.fromRgbF(1.0, val, val, 1.0)
         return None
 

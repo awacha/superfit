@@ -60,9 +60,11 @@ class ParameterModel(QtCore.QAbstractItemModel):
         self.endResetModel()
         self.deleteLater()
 
-    def addParameter(self, name:str, value:float, lbound:float, ubound:float, fittable:bool):
+    def addParameter(self, name:str, value:float, lbound:float, ubound:float, fittable:bool, lbound_enabled:bool=False,
+                     ubound_enabled:bool=False):
         self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
-        self._data.append(Parameter(name, value, 0, lbound, ubound, fittable))
+        self._data.append(Parameter(name, value, 0, lbound, ubound, fittable, lbound_enabled=lbound_enabled,
+                                    ubound_enabled=ubound_enabled))
         self.endInsertRows()
 
     def parameter(self, index:int) -> Parameter:

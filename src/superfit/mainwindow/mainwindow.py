@@ -36,11 +36,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             ('Parameters && fitting...', 'parameterview')]:
             w=QtWidgets.QWidget(self.toolBox)
             w.setContentsMargins(0,0,0,0)
+            w.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Preferred)
             l=QtWidgets.QVBoxLayout(w)
             l.setContentsMargins(0,0,0,0)
             w.setLayout(l)
             l.addWidget(getattr(self, attrname))
-            l.addStretch(1)
+            #l.addStretch(0)
             self._pagewidgets.append(w)
             self.toolBox.addItem(self._pagewidgets[-1], text)
         self.dataselector.dataSetLoaded.connect(self.onDataLoaded)

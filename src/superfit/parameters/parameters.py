@@ -1,7 +1,9 @@
 from PyQt5 import QtWidgets, QtCore
 import fffs
 import time
+import queue
 import scipy.optimize
+import multiprocessing
 import traceback
 from scipy.linalg import svd
 from .parametermodel import ParameterModel, Parameter
@@ -41,47 +43,41 @@ class FitResults:
     ssres_w:float=None
 
 
-class FitWorker(QtCore.QThread):
-    resultsReady = QtCore.pyqtSignal(scipy.optimize.OptimizeResult)
-    exceptionOccurred = QtCore.pyqtSignal(type, Exception, object)
-
-    def __init__(self, function:Callable, dataset:np.ndarray, param_init:Sequence,
+def do_fitting(resultsqueue:multiprocessing.Queue,
+               function:Callable, dataset:np.ndarray, param_init:Sequence,
                  fittable:Sequence, lbounds:Sequence, ubounds:Sequence, **kwargs):
-        super().__init__(None)
-        self.free = np.array(fittable, dtype=np.bool)
-        self.param_init = np.array(param_init, dtype=np.double)
-        self.x = dataset[:,0]
-        self.y = dataset[:,1]
+    try:
+        free = np.array(fittable, dtype=np.bool)
+        param_init = np.array(param_init, dtype=np.double)
+        x = dataset[:,0]
+        y = dataset[:,1]
         try:
-            self.dy = dataset[:,2]
+            dy = dataset[:,2]
         except IndexError:
-            self.dy = np.ones_like(self.x)
+            dy = np.ones_like(x)
         if kwargs.pop('dy_weight'):
-            self.dy = np.ones_like(self.x)
+            dy = np.ones_like(x)
         try:
-            self.dx = dataset[:,3]
+            dx = dataset[:,3]
         except IndexError:
-            self.dx = np.ones_like(self.x)
-        self.function = function
-        self.lbounds = np.array(lbounds)
-        self.ubounds = np.array(ubounds)
-        self.lsq_kwargs = kwargs
+            dx = np.ones_like(x)
 
-
-    def fitfunc(self, params:np.ndarray):
-        self.param_init[self.free] = params
-        return (self.y-self.function(self.x, *self.param_init))/self.dy
-
-    def run(self):
-        try:
-            result = scipy.optimize.least_squares(
-                self.fitfunc, self.param_init[self.free],
-                bounds=(self.lbounds[self.free], self.ubounds[self.free]),
-                **self.lsq_kwargs
-            )
-            self.resultsReady.emit(result)
-        except Exception:
-            self.exceptionOccurred.emit(*sys.exc_info())
+        lbounds = np.array(lbounds)
+        ubounds = np.array(ubounds)
+        lsq_kwargs = kwargs
+        def fitfunc(params:np.ndarray, param_init, free, x, y, dy, function):
+            param_init[free] = params
+            return (y-function(x, *param_init))/dy
+        resultsqueue.put_nowait(('started',None))
+        result = scipy.optimize.least_squares(
+            fitfunc, param_init[free],
+            bounds=(lbounds[free], ubounds[free]),
+            args=(param_init, free, x, y, dy, function),
+            **lsq_kwargs
+        )
+        resultsqueue.put_nowait(('result', result))
+    except Exception:
+        resultsqueue.put_nowait(('exception', *sys.exc_info()))
 
 
 class ParameterView(QtWidgets.QWidget, Ui_Form):
@@ -90,10 +86,12 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
     fitCurveChanged = QtCore.pyqtSignal(np.ndarray)
     fitResultsReady = QtCore.pyqtSignal(FitResults)
     dataset: np.ndarray = None
-    fitworker: FitWorker = None
     algorithm_kwargs: Dict = {}
     fitstarted:float = None
     lastresults: FitResults=None
+    fitworker: multiprocessing.Process = None
+    resultsqueue: multiprocessing.Queue = None
+    resultstimer: int
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -117,6 +115,9 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.correctValuesPushButton.clicked.connect(self.onFixOOBParameters)
         self.checkOutOfBoundsParameters()
         self.onSelectionChanged()
+        self.stopFittingPushButton.setVisible(False)
+        self.progressBar.setVisible(False)
+        self.stopFittingPushButton.clicked.connect(self.onStopFitting)
 
     def onStep(self):
         max_nfev_orig = self.algorithm_kwargs['max_nfev']
@@ -136,27 +137,60 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
     def onFit(self):
         if self.fitworker is not None:
             return
-        self.fitworker = FitWorker(
-            self.func.fitfunction, self.dataset,
+        self.resultsqueue=multiprocessing.Queue()
+        self.fitworker = multiprocessing.Process(target=do_fitting, args = (
+            self.resultsqueue, self.func.fitfunction, self.dataset,
             [self.model.parameter(i).value for i in range(self.model.rowCount())],
             [self.model.parameter(i).fittable and not self.model.parameter(i).fixed
              for i in range(self.model.rowCount())],
             [(-np.inf,self.model.parameter(i).lbound)[self.model.parameter(i).lbound_enabled]
              for i in range(self.model.rowCount())],
-            [(np.inf, self.model.parameter(i).ubound)[self.model.parameter(i).lbound_enabled]
-             for i in range(self.model.rowCount())], **self.algorithm_kwargs
-        )
-        self.fitworker.resultsReady.connect(self.onFitResultsReady)
-        self.fitworker.exceptionOccurred.connect(self.onFitException)
-        self.fitworker.finished.connect(self.onFitFinished)
-        self.fitworker.started.connect(self.onFitStarted)
+            [(np.inf, self.model.parameter(i).ubound)[self.model.parameter(i).ubound_enabled]
+             for i in range(self.model.rowCount())],
+        ), kwargs= self.algorithm_kwargs)
+        self.fitworker.daemon = True
+        self.resultstimer=self.startTimer(100)
         self.fitworker.start()
+
+    def timerEvent(self, event: QtCore.QTimerEvent):
+        if event.timerId() != self.resultstimer:
+            super().timerEvent(event)
+            return
+        event.accept()
+        try:
+            what, obj = self.resultsqueue.get_nowait()
+        except queue.Empty:
+            return
+        if what == 'started':
+            self.onFitStarted()
+        elif what == 'result':
+            self.onFitResultsReady(obj)
+            self.finalizeFitWorker()
+        elif what == 'exception':
+            self.onFitException(*obj)
+            self.finalizeFitWorker()
+
+    def finalizeFitWorker(self):
+        self.fitworker.join()
+        self.fitworker = None
+        self.resultsqueue.close()
+        self.resultsqueue = None
+        self.killTimer(self.resultstimer)
+        self.resultstimer = None
+        self.onFitFinished()
+
+    def onStopFitting(self):
+        if self.fitworker is None:
+            return
+        self.fitworker.terminate()
 
     def onFitStarted(self):
         self.checkOutOfBoundsParameters()
 #        self.fitPushButton.setEnabled(False)
 #        self.stepPushButton.setEnabled(False)
         self.fitstarted = time.monotonic()
+        self.progressBar.setVisible(True)
+        self.stopFittingPushButton.setVisible(True)
 
     def onFitResultsReady(self, results:scipy.optimize.OptimizeResult):
         fitresults = FitResults()
@@ -183,7 +217,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         fitresults.covar = np.dot(VT.T / s ** 2, VT)
         fitresults.paramuncertainties = np.zeros_like(fitresults.paramvalues)
         fitresults.paramuncertainties[fitresults.paramfree] = np.diag(fitresults.covar)**0.5
-        fitresults.paramactive_mask = np.zeros(len(fitresults.paramvalues), dtype=np.uint8)
+        fitresults.paramactive_mask = np.zeros(len(fitresults.paramvalues), dtype=np.int8)
         fitresults.paramactive_mask[fitresults.paramfree] = results.active_mask
         fitresults.correl_coeffs = (fitresults.covar / np.outer(np.diag(fitresults.covar)**0.5, np.diag(fitresults.covar)**0.5))
         fitresults.chi2 = (results.fun**2).sum()
@@ -209,21 +243,25 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.fitResultsReady.emit(fitresults)
 
     def updateWithResults(self, fitresults:FitResults):
-        for i in range(self.model.rowCount()):
-            if fitresults.paramfree[i]:
-                self.model.changeValue(i, fitresults.paramvalues[i])
-                self.model.changeUncertainty(i, fitresults.paramuncertainties[i])
-            else:
-                self.model.changeUncertainty(i, 0)
-            self.model.changeLBoundActive(i, fitresults.paramactive_mask[i]<0)
-            self.model.changeUBoundActive(i, fitresults.paramactive_mask[i]>0)
-        self.exitStatusLabel.setText('{} (code: {:d})'.format(fitresults.message, fitresults.statusint))
-        self.chi2Label.setText('{:.4f}'.format(fitresults.chi2))
-        self.reducedChi2Label.setText('{:.4f}'.format(fitresults.chi2_reduced))
-        self.r2Label.setText('{:.4f}'.format(fitresults.R2_adj))
-        self.dofLabel.setText('{}'.format(fitresults.dof))
-        self.elapsedTimeLabel.setText('{:.4f} secs'.format(fitresults.elapsedtime))
-        self.nfuncevLabel.setText('{}'.format(fitresults.nfunceval))
+        try:
+            self.model.blockSignals(True)
+            for i in range(self.model.rowCount()):
+                if fitresults.paramfree[i]:
+                    self.model.changeValue(i, fitresults.paramvalues[i])
+                    self.model.changeUncertainty(i, fitresults.paramuncertainties[i])
+                else:
+                    self.model.changeUncertainty(i, 0)
+                self.model.changeLBoundActive(i, fitresults.paramactive_mask[i]<0)
+                self.model.changeUBoundActive(i, fitresults.paramactive_mask[i]>0)
+            self.exitStatusLabel.setText('{} (code: {:d})'.format(fitresults.message, fitresults.statusint))
+            self.chi2Label.setText('{:.4f}'.format(fitresults.chi2))
+            self.reducedChi2Label.setText('{:.4f}'.format(fitresults.chi2_reduced))
+            self.r2Label.setText('{:.4f}'.format(fitresults.R2_adj))
+            self.dofLabel.setText('{}'.format(fitresults.dof))
+            self.elapsedTimeLabel.setText('{:.4f} secs'.format(fitresults.elapsedtime))
+            self.nfuncevLabel.setText('{}'.format(fitresults.nfunceval))
+        finally:
+            self.model.blockSignals(False)
         self.model.historyPush()
         self.onNewFitCurve()
 
@@ -231,17 +269,19 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         QtWidgets.QMessageBox.critical(self, 'Error while fitting', '\n'.join(traceback.format_exception(exctype, exc, tb)))
 
     def onFitFinished(self):
-        self.fitworker.deleteLater()
-        self.fitworker = None
         self.checkOutOfBoundsParameters()
+        self.progressBar.setVisible(False)
+        self.stopFittingPushButton.setVisible(False)
         #self.fitPushButton.setEnabled(True)
         #self.stepPushButton.setEnabled(True)
 
-    def onDataChanged(self):
-        self.onNewFitCurve()
-        for i in range(self.model.columnCount()):
-            self.treeView.resizeColumnToContents(i)
-        self.checkOutOfBoundsParameters()
+    def onDataChanged(self, topleft:QtCore.QModelIndex, bottomright:QtCore.QModelIndex, roles:List[int]):
+        if topleft.column()<=3 and bottomright.column()>=3 and QtCore.Qt.DisplayRole in roles:
+            # only do work if a parameter value has changed
+            self.onNewFitCurve()
+            for i in range(self.model.columnCount()):
+                self.treeView.resizeColumnToContents(i)
+            self.checkOutOfBoundsParameters()
 
     def checkOutOfBoundsParameters(self):
         oob = [p.name for p in self.model if ((p.value < p.lbound) and p.lbound_enabled) or
@@ -305,7 +345,9 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.model.cleanup()
         self.model = newmodel
         for p in self.func.parameters:
-            self.model.addParameter(p.name, p.defaultvalue, p.lbound, p.ubound, p.fittable)
+            self.model.addParameter(p.name, p.defaultvalue, p.lbound, p.ubound, p.fittable,
+                                    lbound_enabled=np.isfinite(p.lbound),
+                                    ubound_enabled=np.isfinite(p.ubound))
         self.model.dataChanged.connect(self.onDataChanged)
         self.model.historyChanged.connect(self.onHistoryChanged)
         self.historyHorizontalSlider.valueChanged.connect(self.onHistoryMoveRequest)
@@ -315,7 +357,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
             self.treeView.resizeColumnToContents(i)
         self.onSelectionChanged()
         self.onHistoryChanged()
-        self.onNewFitCurve()
+        self.checkOutOfBoundsParameters()
 
     def onHistoryBack(self):
         self.model.historyBack()
@@ -346,7 +388,8 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.dataset = dataset
         self.fitcurve = None
         self.onSelectionChanged()
-        self.onNewFitCurve()
+        self.onHistoryChanged()
+        self.checkOutOfBoundsParameters()
 
     def onNewFitCurve(self):
         if self.dataset is None:
