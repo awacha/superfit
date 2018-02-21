@@ -2,7 +2,7 @@ from typing import List, Any, Union
 import copy
 
 import numpy as np
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Parameter:
     name:str=''
@@ -283,3 +283,24 @@ class ParameterModel(QtCore.QAbstractItemModel):
     def __iter__(self):
         for p in self._data:
             yield p
+
+class SpinBoxDelegate(QtWidgets.QStyledItemDelegate):
+    def createEditor(self, parent: QtWidgets.QWidget, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex):
+        editor = QtWidgets.QDoubleSpinBox(parent)
+        editor.setMinimum(-10e20)
+        editor.setMaximum(10e20)
+        editor.setDecimals(16)
+        return editor
+
+    def setEditorData(self, editor: QtWidgets.QWidget, index: QtCore.QModelIndex):
+        value = index.data(QtCore.Qt.EditRole)
+        assert isinstance(editor, QtWidgets.QDoubleSpinBox)
+        editor.setValue(value)
+
+    def updateEditorGeometry(self, editor: QtWidgets.QWidget, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex):
+        editor.setGeometry(option.rect)
+
+    def setModelData(self, editor: QtWidgets.QWidget, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex):
+        model.setData(index, editor.value(), QtCore.Qt.EditRole)
+
+

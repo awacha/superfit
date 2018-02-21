@@ -8,6 +8,7 @@ from ..parameters import ParameterView, FitResults
 from ..modelselector import ModelSelector
 from ..lsqalgorithmselector import LSQAlgorithmSelector
 from ..correlation import CorrelationCoefficientsTable
+from ..modelrepresentation import ModelRepresentation
 from ..graph import Graph
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -29,6 +30,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.parameterview = ParameterView(self)
         self.lsqalgorithmselector = LSQAlgorithmSelector(self)
         self.correlationcoefficients = CorrelationCoefficientsTable(self)
+        self.modelrepresentation = ModelRepresentation(self)
         for text, attrname in [
             ('Load data...', 'dataselector'),
             ('Model function', 'modelselector'),
@@ -52,7 +54,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tabWidget.removeTab(0)
         self.graph = Graph(self)
         self.tabWidget.addTab(self.graph,'Data && fit')
-#        self.tabWidget.addTab(..., 'Model representation')
+        self.tabWidget.addTab(self.modelrepresentation, 'Model representation')
         self.tabWidget.addTab(self.correlationcoefficients, 'Parameter correlation')
 #        self.tabWidget.addTab(..., 'Result && statistics')
         self.onModelSelected(self.modelselector.model())
@@ -85,3 +87,4 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def onFitCurveChanged(self, fitcurve:np.ndarray):
         self.graph.setFitCurve(fitcurve)
         self.graph.replotModel()
+        self.parameterview.plotRepresentation(self.modelrepresentation.figure)

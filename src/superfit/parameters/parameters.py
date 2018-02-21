@@ -5,8 +5,9 @@ import queue
 import scipy.optimize
 import multiprocessing
 import traceback
+from matplotlib.figure import Figure
 from scipy.linalg import svd
-from .parametermodel import ParameterModel, Parameter
+from .parametermodel import ParameterModel, Parameter, SpinBoxDelegate
 from .parameters_ui import Ui_Form
 import sys
 import numpy as np
@@ -102,7 +103,11 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.model = ParameterModel()
         self.model.dataChanged.connect(self.onDataChanged)
         self.model.historyChanged.connect(self.onHistoryChanged)
+        self.delegate = SpinBoxDelegate()
         self.treeView.setModel(self.model)
+        self.treeView.setItemDelegateForColumn(1, self.delegate)
+        self.treeView.setItemDelegateForColumn(2, self.delegate)
+        self.treeView.setItemDelegateForColumn(3, self.delegate)
         self.m5ToolButton.clicked.connect(self.onMinus5)
         self.p5ToolButton.clicked.connect(self.onPlus5)
         self.m20ToolButton.clicked.connect(self.onMinus20)
@@ -407,3 +412,8 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
 
     def setAlgorithmKwargs(self, kwargs):
         self.algorithm_kwargs = kwargs
+
+    def plotRepresentation(self, fig:Figure):
+        fig.clf()
+        self.func.visualize(fig, self.dataset[:,0], *[p.value for p in self.model])
+        fig.canvas.draw()
