@@ -18,6 +18,8 @@ requirements:
     - numpy
     - scipy
     - fffs
+    - docutils
+    - openpyxl
 
   run:
     - python
@@ -26,6 +28,8 @@ requirements:
     - matplotlib
     - pyqt >=5
     - fffs
+    - docutils
+    - openpyxl
 
 about:
   home: https://github.com/awacha/superfit
