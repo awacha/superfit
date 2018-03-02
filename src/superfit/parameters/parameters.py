@@ -1,5 +1,6 @@
 from PyQt5 import QtWidgets, QtCore
 import fffs
+import datetime
 import time
 import queue
 import scipy.optimize
@@ -13,63 +14,66 @@ import sys
 import numpy as np
 from typing import Sequence, Callable, Type, List, Dict
 
+
 class FitResults:
-    dataset:np.ndarray=None
-    funcvalue:np.ndarray=None
-    paramnames:List[str]=None
-    paramvalues:np.ndarray=None
-    paramuncertainties:np.ndarray=None
-    paramfree:np.ndarray=None
-    paramlbounds:np.ndarray=None
-    paramubounds:np.ndarray=None
-    paramlboundactive:np.ndarray=None
-    paramuboundactive:np.ndarray=None
-    paramactive_mask:np.ndarray=None
-    covar:np.ndarray=None
-    correl_coeffs:np.ndarray=None
-    R2:float=None
-    R2_w:float=None
-    R2_adj:float=None
-    R2_adj_w:float=None
-    chi2:float=None
-    chi2_reduced:float=None
-    dof:int=None
-    elapsedtime:float=None
-    nfunceval:float=None
-    message:str=None
-    statusint:int=None
-    sstot:float=None
-    ssres:float=None
-    sstot_w:float=None
-    ssres_w:float=None
+    dataset: np.ndarray = None
+    funcvalue: np.ndarray = None
+    paramnames: List[str] = None
+    paramvalues: np.ndarray = None
+    paramuncertainties: np.ndarray = None
+    paramfree: np.ndarray = None
+    paramlbounds: np.ndarray = None
+    paramubounds: np.ndarray = None
+    paramlboundactive: np.ndarray = None
+    paramuboundactive: np.ndarray = None
+    paramactive_mask: np.ndarray = None
+    covar: np.ndarray = None
+    correl_coeffs: np.ndarray = None
+    R2: float = None
+    R2_w: float = None
+    R2_adj: float = None
+    R2_adj_w: float = None
+    chi2: float = None
+    chi2_reduced: float = None
+    dof: int = None
+    elapsedtime: float = None
+    nfunceval: float = None
+    message: str = None
+    statusint: int = None
+    sstot: float = None
+    ssres: float = None
+    sstot_w: float = None
+    ssres_w: float = None
 
 
-def do_fitting(resultsqueue:multiprocessing.Queue,
-               function:Callable, dataset:np.ndarray, param_init:Sequence,
-                 fittable:Sequence, lbounds:Sequence, ubounds:Sequence, **kwargs):
+def do_fitting(resultsqueue: multiprocessing.Queue,
+               function: Callable, dataset: np.ndarray, param_init: Sequence,
+               fittable: Sequence, lbounds: Sequence, ubounds: Sequence, **kwargs):
     try:
         free = np.array(fittable, dtype=np.bool)
         param_init = np.array(param_init, dtype=np.double)
-        x = dataset[:,0]
-        y = dataset[:,1]
+        x = dataset[:, 0]
+        y = dataset[:, 1]
         try:
-            dy = dataset[:,2]
+            dy = dataset[:, 2]
         except IndexError:
             dy = np.ones_like(x)
         if kwargs.pop('dy_weight'):
             dy = np.ones_like(x)
         try:
-            dx = dataset[:,3]
+            dx = dataset[:, 3]
         except IndexError:
             dx = np.ones_like(x)
 
         lbounds = np.array(lbounds)
         ubounds = np.array(ubounds)
         lsq_kwargs = kwargs
-        def fitfunc(params:np.ndarray, param_init, free, x, y, dy, function):
+
+        def fitfunc(params: np.ndarray, param_init, free, x, y, dy, function):
             param_init[free] = params
-            return (y-function(x, *param_init))/dy
-        resultsqueue.put_nowait(('started',None))
+            return (y - function(x, *param_init)) / dy
+
+        resultsqueue.put_nowait(('started', None))
         result = scipy.optimize.least_squares(
             fitfunc, param_init[free],
             bounds=(lbounds[free], ubounds[free]),
@@ -86,10 +90,11 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
     fitcurve: np.ndarray = None
     fitCurveChanged = QtCore.pyqtSignal(np.ndarray)
     fitResultsReady = QtCore.pyqtSignal(FitResults)
+    exportReportRequested = QtCore.pyqtSignal()
     dataset: np.ndarray = None
     algorithm_kwargs: Dict = {}
-    fitstarted:float = None
-    lastresults: FitResults=None
+    fitstarted: float = None
+    lastresults: FitResults = None
     fitworker: multiprocessing.Process = None
     resultsqueue: multiprocessing.Queue = None
     resultstimer: int
@@ -123,6 +128,31 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.stopFittingPushButton.setVisible(False)
         self.progressBar.setVisible(False)
         self.stopFittingPushButton.clicked.connect(self.onStopFitting)
+        self.savePushButton.clicked.connect(self.onSaveParameters)
+        self.loadPushButton.clicked.connect(self.onLoadParameters)
+        self.exportReportPushButton.clicked.connect(self.exportReportRequested.emit)
+
+    def onSaveParameters(self):
+        filename, filtername = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save fit parameters to...", '', "Superfit state files (*.ssf);; All files (*)",
+            "Superfit state files (*.ssf)")
+        if not filename:
+            return
+        if not filename.endswith('.ssf'):
+            filename = filename + '.ssf'
+        self.model.saveState(filename)
+
+    def onLoadParameters(self):
+        filename, filtername = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load fit parameters from...", '', 'Superfit state files (*.ssf);; All files (*)',
+            "Superfit state files (*.ssf)"
+        )
+        if not filename:
+            return
+        try:
+            self.model.loadState(filename)
+        except Exception as exc:
+            QtWidgets.QMessageBox.critical(self, 'Error while loading state file', str(exc))
 
     def onStep(self):
         max_nfev_orig = self.algorithm_kwargs['max_nfev']
@@ -132,7 +162,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
             if self.algorithm_kwargs['method'] in ['trf', 'dogbox']:
                 self.algorithm_kwargs['max_nfev'] = npars
             elif self.algorithm_kwargs['method'] == 'lm':
-                self.algorithm_kwargs['max_nfev'] = npars*(npars+1)
+                self.algorithm_kwargs['max_nfev'] = npars * (npars + 1)
             else:
                 raise NotImplementedError(self.algorithm_kwargs['method'])
             self.onFit()
@@ -142,19 +172,19 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
     def onFit(self):
         if self.fitworker is not None:
             return
-        self.resultsqueue=multiprocessing.Queue()
-        self.fitworker = multiprocessing.Process(target=do_fitting, args = (
+        self.resultsqueue = multiprocessing.Queue()
+        self.fitworker = multiprocessing.Process(target=do_fitting, args=(
             self.resultsqueue, self.func.fitfunction, self.dataset,
             [self.model.parameter(i).value for i in range(self.model.rowCount())],
             [self.model.parameter(i).fittable and not self.model.parameter(i).fixed
              for i in range(self.model.rowCount())],
-            [(-np.inf,self.model.parameter(i).lbound)[self.model.parameter(i).lbound_enabled]
+            [(-np.inf, self.model.parameter(i).lbound)[self.model.parameter(i).lbound_enabled]
              for i in range(self.model.rowCount())],
             [(np.inf, self.model.parameter(i).ubound)[self.model.parameter(i).ubound_enabled]
              for i in range(self.model.rowCount())],
-        ), kwargs= self.algorithm_kwargs)
+        ), kwargs=self.algorithm_kwargs)
         self.fitworker.daemon = True
-        self.resultstimer=self.startTimer(100)
+        self.resultstimer = self.startTimer(100)
         self.fitworker.start()
 
     def timerEvent(self, event: QtCore.QTimerEvent):
@@ -191,15 +221,15 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
 
     def onFitStarted(self):
         self.checkOutOfBoundsParameters()
-#        self.fitPushButton.setEnabled(False)
-#        self.stepPushButton.setEnabled(False)
+        #        self.fitPushButton.setEnabled(False)
+        #        self.stepPushButton.setEnabled(False)
         self.fitstarted = time.monotonic()
         self.progressBar.setVisible(True)
         self.stopFittingPushButton.setVisible(True)
 
-    def onFitResultsReady(self, results:scipy.optimize.OptimizeResult):
+    def onFitResultsReady(self, results: scipy.optimize.OptimizeResult):
         fitresults = FitResults()
-        fitresults.elapsedtime = time.monotonic()- self.fitstarted
+        fitresults.elapsedtime = time.monotonic() - self.fitstarted
         fitresults.dataset = self.dataset
         fitresults.paramnames = [self.model.parameter(i).name for i in range(self.model.rowCount())]
         self.fitstarted = None
@@ -207,36 +237,39 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         fitresults.nfunceval = results.nfev
         fitresults.paramlboundactive = [self.model.parameter(i).lbound_enabled for i in range(self.model.rowCount())]
         fitresults.paramlbounds = [self.model.parameter(i).lbound for i in range(self.model.rowCount())]
-        fitresults.paramuboundactive= [self.model.parameter(i).ubound_enabled for i in range(self.model.rowCount())]
+        fitresults.paramuboundactive = [self.model.parameter(i).ubound_enabled for i in range(self.model.rowCount())]
         fitresults.paramubounds = [self.model.parameter(i).ubound for i in range(self.model.rowCount())]
         fitresults.statusint = results.status
         fitresults.paramvalues = np.array([self.model.parameter(i).value for i in range(self.model.rowCount())])
         fitresults.paramfree = np.array([self.model.parameter(i).fittable and not self.model.parameter(i).fixed
-                         for i in range(self.model.rowCount())])
+                                         for i in range(self.model.rowCount())])
         fitresults.paramvalues[fitresults.paramfree] = results.x
-        fitresults.funcvalue = self.func.fitfunction(self.dataset[:,0], *fitresults.paramvalues)
+        fitresults.funcvalue = self.func.fitfunction(self.dataset[:, 0], *fitresults.paramvalues)
         _, s, VT = svd(results.jac, full_matrices=False)
         threshold = np.finfo(float).eps * max(results.jac.shape) * s[0]
         s = s[s > threshold]
         VT = VT[:s.size]
         fitresults.covar = np.dot(VT.T / s ** 2, VT)
         fitresults.paramuncertainties = np.zeros_like(fitresults.paramvalues)
-        fitresults.paramuncertainties[fitresults.paramfree] = np.diag(fitresults.covar)**0.5
+        fitresults.paramuncertainties[fitresults.paramfree] = np.diag(fitresults.covar) ** 0.5
         fitresults.paramactive_mask = np.zeros(len(fitresults.paramvalues), dtype=np.int8)
         fitresults.paramactive_mask[fitresults.paramfree] = results.active_mask
-        fitresults.correl_coeffs = (fitresults.covar / np.outer(np.diag(fitresults.covar)**0.5, np.diag(fitresults.covar)**0.5))
-        fitresults.chi2 = (results.fun**2).sum()
-        fitresults.dof = self.dataset.shape[0]-fitresults.paramfree.sum()
-        fitresults.chi2_reduced = fitresults.chi2/fitresults.dof
-        fitresults.sstot = ((self.dataset[:,1]-np.mean(self.dataset[:,1]))**2).sum()
-        fitresults.ssres = ((fitresults.funcvalue - self.dataset[:,1])**2).sum()
-        fitresults.R2 = 1-fitresults.ssres/fitresults.sstot
-        fitresults.R2_adj = 1 - (fitresults.ssres/ (fitresults.dof-1)) / (fitresults.sstot/(self.dataset.shape[0]-1))
-        if self.dataset.shape[1]>2:
-            fitresults.sstot_w = (((self.dataset[:, 1] - np.mean(self.dataset[:, 1]))/self.dataset[:,2]) ** 2).sum()
-            fitresults.ssres_w = (((fitresults.funcvalue - self.dataset[:, 1])/self.dataset[:,2]) ** 2).sum()
-            fitresults.R2_w = 1-fitresults.ssres_w/fitresults.sstot_w
-            fitresults.R2_adj_w = 1- (fitresults.ssres_w / (fitresults.dof-1)) / (fitresults.sstot_w/(self.dataset.shape[0]-1))
+        fitresults.correl_coeffs = (
+                    fitresults.covar / np.outer(np.diag(fitresults.covar) ** 0.5, np.diag(fitresults.covar) ** 0.5))
+        fitresults.chi2 = (results.fun ** 2).sum()
+        fitresults.dof = self.dataset.shape[0] - fitresults.paramfree.sum()
+        fitresults.chi2_reduced = fitresults.chi2 / fitresults.dof
+        fitresults.sstot = ((self.dataset[:, 1] - np.mean(self.dataset[:, 1])) ** 2).sum()
+        fitresults.ssres = ((fitresults.funcvalue - self.dataset[:, 1]) ** 2).sum()
+        fitresults.R2 = 1 - fitresults.ssres / fitresults.sstot
+        fitresults.R2_adj = 1 - (fitresults.ssres / (fitresults.dof - 1)) / (
+                    fitresults.sstot / (self.dataset.shape[0] - 1))
+        if self.dataset.shape[1] > 2:
+            fitresults.sstot_w = (((self.dataset[:, 1] - np.mean(self.dataset[:, 1])) / self.dataset[:, 2]) ** 2).sum()
+            fitresults.ssres_w = (((fitresults.funcvalue - self.dataset[:, 1]) / self.dataset[:, 2]) ** 2).sum()
+            fitresults.R2_w = 1 - fitresults.ssres_w / fitresults.sstot_w
+            fitresults.R2_adj_w = 1 - (fitresults.ssres_w / (fitresults.dof - 1)) / (
+                        fitresults.sstot_w / (self.dataset.shape[0] - 1))
         else:
             fitresults.sstot_w = fitresults.sstot
             fitresults.ssres_w = fitresults.ssres
@@ -247,7 +280,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.updateWithResults(fitresults)
         self.fitResultsReady.emit(fitresults)
 
-    def updateWithResults(self, fitresults:FitResults):
+    def updateWithResults(self, fitresults: FitResults):
         try:
             self.model.blockSignals(True)
             for i in range(self.model.rowCount()):
@@ -256,8 +289,8 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
                     self.model.changeUncertainty(i, fitresults.paramuncertainties[i])
                 else:
                     self.model.changeUncertainty(i, 0)
-                self.model.changeLBoundActive(i, fitresults.paramactive_mask[i]<0)
-                self.model.changeUBoundActive(i, fitresults.paramactive_mask[i]>0)
+                self.model.changeLBoundActive(i, fitresults.paramactive_mask[i] < 0)
+                self.model.changeUBoundActive(i, fitresults.paramactive_mask[i] > 0)
             self.exitStatusLabel.setText('{} (code: {:d})'.format(fitresults.message, fitresults.statusint))
             self.chi2Label.setText('{:.4f}'.format(fitresults.chi2))
             self.reducedChi2Label.setText('{:.4f}'.format(fitresults.chi2_reduced))
@@ -270,18 +303,19 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.model.historyPush()
         self.onNewFitCurve()
 
-    def onFitException(self, exctype:Type[Exception], exc:Exception, tb:{'tb_frame', 'tb_lineno'}):
-        QtWidgets.QMessageBox.critical(self, 'Error while fitting', '\n'.join(traceback.format_exception(exctype, exc, tb)))
+    def onFitException(self, exctype: Type[Exception], exc: Exception, tb: {'tb_frame', 'tb_lineno'}):
+        QtWidgets.QMessageBox.critical(self, 'Error while fitting',
+                                       '\n'.join(traceback.format_exception(exctype, exc, tb)))
 
     def onFitFinished(self):
         self.checkOutOfBoundsParameters()
         self.progressBar.setVisible(False)
         self.stopFittingPushButton.setVisible(False)
-        #self.fitPushButton.setEnabled(True)
-        #self.stepPushButton.setEnabled(True)
+        # self.fitPushButton.setEnabled(True)
+        # self.stepPushButton.setEnabled(True)
 
-    def onDataChanged(self, topleft:QtCore.QModelIndex, bottomright:QtCore.QModelIndex, roles:List[int]):
-        if topleft.column()<=3 and bottomright.column()>=3 and QtCore.Qt.DisplayRole in roles:
+    def onDataChanged(self, topleft: QtCore.QModelIndex, bottomright: QtCore.QModelIndex, roles: List[int]):
+        if topleft.column() <= 3 and bottomright.column() >= 3 and QtCore.Qt.DisplayRole in roles:
             # only do work if a parameter value has changed
             self.onNewFitCurve()
             for i in range(self.model.columnCount()):
@@ -290,7 +324,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
 
     def checkOutOfBoundsParameters(self):
         oob = [p.name for p in self.model if ((p.value < p.lbound) and p.lbound_enabled) or
-               ((p.value > p.ubound) and p.ubound_enabled) ]
+               ((p.value > p.ubound) and p.ubound_enabled)]
         self.oobLabel.setText('The following parameters are out of bounds: {}'.format(', '.join(oob)))
         self.outOfBoundParametersGroupBox.setVisible(bool(oob))
         self.fitPushButton.setEnabled((self.dataset is not None) and (not bool(oob)) and (self.fitworker is None))
@@ -298,7 +332,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
 
     def onFixOOBLimits(self):
         for p in self.model:
-            if (p.value< p.lbound) and (p.lbound_enabled):
+            if (p.value < p.lbound) and (p.lbound_enabled):
                 self.model.changeLBound(p.name, p.value)
             if (p.value > p.ubound) and (p.ubound_enabled):
                 self.model.changeUBound(p.name, p.value)
@@ -306,7 +340,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
 
     def onFixOOBParameters(self):
         for p in self.model:
-            if (p.value< p.lbound) and (p.lbound_enabled):
+            if (p.value < p.lbound) and (p.lbound_enabled):
                 self.model.changeValue(p.name, p.lbound)
             if (p.value > p.ubound) and (p.ubound_enabled):
                 self.model.changeValue(p.name, p.ubound)
@@ -324,8 +358,8 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         if not idx.isValid():
             return
         currvalue = self.model.parameter(idx.row()).value
-        self.model.changeValue(idx.row(), currvalue*percentile)
-        self.onNewFitCurve()
+        self.model.changeValue(idx.row(), currvalue * percentile)
+        #self.onNewFitCurve()
 
     def onMinus5(self):
         self.adjustSelectedParameter(0.95)
@@ -339,7 +373,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
     def onPlus20(self):
         self.adjustSelectedParameter(1.20)
 
-    def setModelFunc(self, modelfunc:fffs.ModelFunction):
+    def setModelFunc(self, modelfunc: fffs.ModelFunction):
         self.func = modelfunc
         newmodel = ParameterModel()
         self.treeView.selectionModel().currentRowChanged.disconnect()
@@ -358,6 +392,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         self.historyHorizontalSlider.valueChanged.connect(self.onHistoryMoveRequest)
         self.historyBackToolButton.clicked.connect(self.onHistoryBack)
         self.historyForwardToolButton.clicked.connect(self.onHistoryForward)
+        self.model.historyPush()
         for i in range(self.model.columnCount()):
             self.treeView.resizeColumnToContents(i)
         self.onSelectionChanged()
@@ -381,7 +416,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
 
     def onHistoryChanged(self):
         self.historyHorizontalSlider.setMinimum(0)
-        self.historyHorizontalSlider.setMaximum(self.model.historySize()-1)
+        self.historyHorizontalSlider.setMaximum(self.model.historySize() - 1)
         try:
             self.historyHorizontalSlider.blockSignals(True)
             self.historyHorizontalSlider.setValue(self.model.historyIndex())
@@ -389,7 +424,7 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
             self.historyHorizontalSlider.blockSignals(False)
         self.onNewFitCurve()
 
-    def setDataSet(self, dataset:np.ndarray):
+    def setDataSet(self, dataset: np.ndarray):
         self.dataset = dataset
         self.fitcurve = None
         self.onSelectionChanged()
@@ -404,16 +439,17 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         if self.model is None:
             return
         parameters = [self.model.parameter(i).value for i in range(self.model.rowCount())]
-        self.fitcurve = self.func.fitfunction(self.dataset[:,0], *parameters)
+        self.fitcurve = self.func.fitfunction(self.dataset[:, 0], *parameters)
         self.fitCurveChanged.emit(self.fitCurve())
 
     def fitCurve(self):
-        return np.stack((self.dataset[:,0],self.fitcurve)).T
+        return np.stack((self.dataset[:, 0], self.fitcurve)).T
 
     def setAlgorithmKwargs(self, kwargs):
         self.algorithm_kwargs = kwargs
 
-    def plotRepresentation(self, fig:Figure):
+    def plotRepresentation(self, fig: Figure):
         fig.clf()
-        self.func.visualize(fig, self.dataset[:,0], *[p.value for p in self.model])
+        self.func.visualize(fig, self.dataset[:, 0], *[p.value for p in self.model])
         fig.canvas.draw()
+

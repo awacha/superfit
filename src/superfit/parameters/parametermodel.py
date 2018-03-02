@@ -1,5 +1,6 @@
 from typing import List, Any, Union
 import copy
+import pickle
 
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -32,7 +33,33 @@ class Parameter:
         self.ubound_enabled=ubound_enabled
         self.lbound_reached=lbound_reached
         self.ubound_reached=ubound_reached
-        
+
+    def toDict(self):
+        return {'name':self.name,
+                'value':self.value,
+                'uncertainty':self.uncertainty,
+                'lbound':self.lbound,
+                'ubound':self.ubound,
+                'fittable':self.fittable,
+                'fixed':self.fixed,
+                'lbound_enabled':self.lbound_enabled,
+                'lbound_reached':self.lbound_reached,
+                'ubound_enabled':self.ubound_enabled,
+                'ubound_reached':self.ubound_reached,
+                }
+
+    def fromDict(self, dict):
+        self.name = dict['name']
+        self.value = dict['value']
+        self.uncertainty=dict['uncertainty']
+        self.lbound=dict['lbound']
+        self.ubound=dict['ubound']
+        self.fittable=dict['fittable']
+        self.fixed=dict['fixed']
+        self.lbound_enabled=dict['lbound_enabled']
+        self.lbound_reached=dict['lbound_reached']
+        self.ubound_enabled = dict['ubound_enabled']
+        self.ubound_reached = dict['ubound_reached']
     
 class ParameterModel(QtCore.QAbstractItemModel):
     # columns:
@@ -60,6 +87,24 @@ class ParameterModel(QtCore.QAbstractItemModel):
         self.endResetModel()
         self.deleteLater()
 
+    def saveState(self, filename):
+        lis = [p.toDict() for p in self._data]
+        with open(filename, 'wb') as f:
+            pickle.dump(lis, f)
+
+    def loadState(self, filename):
+        with open(filename, 'rb') as f:
+            data=pickle.load(f)
+        names = sorted([p['name'] for p in data])
+        if names != [p.name for p in self._data]:
+            raise ValueError('Incompatible parameter data file')
+        for p in self._data:
+            dic=[d for d in data if d['name'] == p.name][0]
+            p.fromDict(dic)
+        self.dataChanged.emit(self.index(0,0), self.index(self.rowCount(), self.columnCount()),
+                              [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole, QtCore.Qt.BackgroundColorRole, QtCore.Qt.CheckStateRole])
+        self.historyPush()
+
     def addParameter(self, name:str, value:float, lbound:float, ubound:float, fittable:bool, lbound_enabled:bool=False,
                      ubound_enabled:bool=False):
         self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
@@ -79,32 +124,38 @@ class ParameterModel(QtCore.QAbstractItemModel):
     def changeValue(self, index:Union[int, str], newvalue:float):
         index = self._nametoindex(index)
         self.parameter(index).value = newvalue
-        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
+        self.dataChanged.emit(self.index(index, 3), self.index(index, self.columnCount()), [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole])
+        self.dataChanged.emit(self.index(index, 1), self.index(index, self.columnCount()), [QtCore.Qt.BackgroundColorRole])
 
     def changeUncertainty(self, index:Union[int, str], newvalue:float):
         index = self._nametoindex(index)
         self.parameter(index).uncertainty = newvalue
-        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
+        self.dataChanged.emit(self.index(index, 3), self.index(index, self.columnCount()), [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole])
+        self.dataChanged.emit(self.index(index, 1), self.index(index, self.columnCount()), [QtCore.Qt.BackgroundColorRole])
 
     def changeLBound(self, index: Union[int, str], newvalue: float):
         index = self._nametoindex(index)
         self.parameter(index).lbound = newvalue
-        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
+        self.dataChanged.emit(self.index(index, 1), self.index(index, self.columnCount()), [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole])
+        self.dataChanged.emit(self.index(index, 1), self.index(index, self.columnCount()), [QtCore.Qt.BackgroundColorRole])
 
     def changeUBound(self, index: Union[int, str], newvalue: float):
         index = self._nametoindex(index)
         self.parameter(index).ubound = newvalue
-        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
+        self.dataChanged.emit(self.index(index, 1), self.index(index, self.columnCount()), [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole])
+        self.dataChanged.emit(self.index(index, 1), self.index(index, self.columnCount()), [QtCore.Qt.BackgroundColorRole])
 
     def changeLBoundActive(self, index:Union[int, str], newvalue:bool):
         index = self._nametoindex(index)
         self.parameter(index).lbound_reached = newvalue
-        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
+        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()), [QtCore.Qt.CheckStateRole])
+        self.dataChanged.emit(self.index(index, 1), self.index(index, self.columnCount()), [QtCore.Qt.BackgroundColorRole])
 
     def changeUBoundActive(self, index:Union[int, str], newvalue:bool):
         index = self._nametoindex(index)
         self.parameter(index).ubound_reached = newvalue
-        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()))
+        self.dataChanged.emit(self.index(index, 0), self.index(index, self.columnCount()), [QtCore.Qt.CheckStateRole])
+        self.dataChanged.emit(self.index(index, 1), self.index(index, self.columnCount()), [QtCore.Qt.BackgroundColorRole])
 
 
     def columnCount(self, parent: QtCore.QModelIndex = ...):
@@ -115,7 +166,7 @@ class ParameterModel(QtCore.QAbstractItemModel):
     
     def flags(self, index: QtCore.QModelIndex):
         flags=QtCore.Qt.ItemNeverHasChildren | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
-        if index.column() in [0,1,2]: # name, lbound, ubound are checkable
+        if index.column() in [0,1,2] and self._data[index.row()].fittable: # name, lbound, ubound are checkable
             flags |= QtCore.Qt.ItemIsUserCheckable
         if index.column()==1 and self._data[index.row()].lbound_enabled:
             flags |= QtCore.Qt.ItemIsEditable
@@ -221,17 +272,20 @@ class ParameterModel(QtCore.QAbstractItemModel):
             if index.column()==1:
                 self._data[index.row()].lbound = value
                 self.dataChanged.emit(self.index(index.row(), 0, QtCore.QModelIndex()),
-                                      self.index(index.row(), self.columnCount(), QtCore.QModelIndex()))
+                                      self.index(index.row(), self.columnCount(), QtCore.QModelIndex()),
+                                      [QtCore.Qt.EditRole, QtCore.Qt.DisplayRole])
                 return True
             elif index.column()==2:
                 self._data[index.row()].ubound = value
                 self.dataChanged.emit(self.index(index.row(), 0, QtCore.QModelIndex()),
-                                      self.index(index.row(), self.columnCount(), QtCore.QModelIndex()))
+                                      self.index(index.row(), self.columnCount(), QtCore.QModelIndex()),
+                                      [QtCore.Qt.EditRole, QtCore.Qt.DisplayRole])
                 return True
             elif index.column()==3:
                 self._data[index.row()].value = value
                 self.dataChanged.emit(self.index(index.row(), 0, QtCore.QModelIndex()),
-                                      self.index(index.row(), self.columnCount(), QtCore.QModelIndex()))
+                                      self.index(index.row(), self.columnCount(), QtCore.QModelIndex()),
+                                      [QtCore.Qt.EditRole, QtCore.Qt.DisplayRole])
                 return True
             return False
         return False
