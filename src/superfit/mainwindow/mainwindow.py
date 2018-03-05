@@ -111,10 +111,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 f.write('===============\nFitting results\n===============\n\n*Date*: {}\n\n'.format(datetime.datetime.now()))
                 f.write('*superfit version:* {}\n\n'.format(pkginfo.get_metadata('superfit').version))
                 f.write('*fffs version:* {}\n\n'.format(pkginfo.get_metadata('fffs').version))
-                f.write('\nGraph\n=====\n')
-                f.write('.. figure:: report.png\n'.format(os.path.split(filename)[-1].rsplit('.',1)[0]))
-                f.write('   :alt: fit curve\n\n')
-                f.write('   The measured and the fitted curve\n')
+                f.write('.. |fitcurve| image:: {}\n    :width: 100%\n'.format(os.path.join(td, 'report.png')))
+                f.write('\nGraph\n=====\n|fitcurve|\n')
+#                f.write('.. figure:: {}\n'.format(os.path.join(td, 'report.png')))
+#                f.write('   :alt: fit curve\n\n')
+#                f.write('   The measured and the fitted curve\n')
                 f.write('\nDataset\n=======\n')
                 f.write('*File name:* {}\n\n'.format(self.dataselector.fileNameLineEdit.text()))
                 ds = self.dataselector.dataSet()
@@ -130,7 +131,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 algorithm=self.lsqalgorithmselector.algorithmKwargs()
                 f.write('\nAlgorithm\n=========\n')
                 for k in algorithm:
-                    f.write('*{}:* {}\n'.format(k, algorithm[k]))
+                    f.write('*{}:* {}\n\n'.format(k, algorithm[k]))
                 f.write('\nResults\n=======\n')
                 f.write('\nStatistics\n----------\n')
                 r = self.parameterview.lastresults
@@ -192,16 +193,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     f.write(''.join([' {{:^+{}.3f}} |'.format(maxnamelen+4).format(x) for x in r.correl_coeffs[i, :]])+'\n')
                     f.write('+' + ('-' * (maxnamelen + 6) + '+') * (len(freenames) + 1) + '\n')
             self.graph.figure.savefig(os.path.join(td,'report.png'),dpi=300)
-        description = ('Generates OpenDocument/OpenOffice/ODF documents from '
-               'standalone reStructuredText sources.  ' + default_description)
-        writer = Writer()
-        reader = Reader()
-        cwd = os.getcwd()
-        try:
-            os.chdir(td)
+            description = ('Generates OpenDocument/OpenOffice/ODF documents from '
+                   'standalone reStructuredText sources.  ' + default_description)
+            writer = Writer()
+            reader = Reader()
             output = publish_cmdline_to_binary(reader=reader, writer=writer,
-                description=description, argv=['report.rst', 'report.odt'])
-            os.chdir(cwd)
-            shutil.copy(os.path.join(td, 'report.odt'), filename)
-        finally:
-            os.chdir(cwd)
+                description=description, argv=[os.path.join(td,'report.rst'), filename])
