@@ -18,6 +18,7 @@ requirements:
     - numpy
     - scipy
     - fffs
+    - cython
     - docutils
     - openpyxl
 
@@ -28,6 +29,7 @@ requirements:
     - matplotlib
     - pyqt >=5
     - fffs
+    - cython
     - docutils
     - openpyxl
 

@@ -2,7 +2,6 @@
 import os
 import sys
 
-from Cython.Build import cythonize
 from numpy.lib import get_include
 from setuptools import setup, find_packages, Extension
 
@@ -24,7 +23,7 @@ def compile_uis(packageroot):
             fname = os.path.join(dirpath, fn)
             pyfilename = os.path.splitext(fname)[0] + '_ui.py'
             with open(pyfilename, 'wt', encoding='utf-8') as pyfile:
-                compileUi(fname, pyfile, from_imports=True, import_from='cct.resource')
+                compileUi(fname, pyfile, from_imports=True, import_from='superfit.resource')
             print('Compiled UI file: {} -> {}.'.format(fname, pyfilename))
 
 compile_uis(os.path.join('src','superfit'))
@@ -40,19 +39,6 @@ def getresourcefiles():
     return reslist
 
 
-if sys.platform.lower().startswith('win') and sys.maxsize>2**32:
-    krb5_libs=['krb5_64']
-else:
-    krb5_libs=['krb5']
-
-#extensions = [Extension("cct.qtgui.tools.optimizegeometry.estimateworksize",
-#                        [os.path.join("cct","qtgui","tools","optimizegeometry","estimateworksize.pyx")],
-#                        include_dirs=[get_include()]),
-#              Extension("cct.core.services.accounting.krb5_check_pass",
-#                        [os.path.join("cct","core","services","accounting","krb5_check_pass.pyx")],
-#                        include_dirs=[get_include()], libraries=krb5_libs)
-#              ]
-
 extensions=[]
 
 #update_languagespec()
@@ -63,8 +49,6 @@ setup(name='superfit', author='Andras Wacha',
       packages=find_packages('src'),
       use_scm_version=True,
       setup_requires=['setuptools_scm'],
-      #      cmdclass = {'build_ext': build_ext},
-      ext_modules=cythonize(extensions),
       install_requires=['numpy>=1.11.1', 'scipy>=0.18.0', 'matplotlib>=1.5.2', 'openpyxl', 'fffs', 'docutils'],
       entry_points={'gui_scripts': ['superfit = superfit.__main__:run',
                                     ],
