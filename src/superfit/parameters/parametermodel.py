@@ -17,11 +17,12 @@ class Parameter:
     ubound_enabled:bool=True
     lbound_reached:bool=False
     ubound_reached:bool=False
+    description:str=''
     
     def __init__(self, name:str, value:float=0.0, uncertainty:float=0.0, 
                  lbound:float=-np.inf, ubound:float=np.inf, fittable:bool=True, fixed:bool=False,
                  lbound_enabled:bool=False, ubound_enabled:bool=False, lbound_reached:bool=False,
-                 ubound_reached:bool=False):
+                 ubound_reached:bool=False, description:str=''):
         self.name=name
         self.value=value
         self.uncertainty=uncertainty
@@ -33,6 +34,7 @@ class Parameter:
         self.ubound_enabled=ubound_enabled
         self.lbound_reached=lbound_reached
         self.ubound_reached=ubound_reached
+        self.description=description
 
     def toDict(self):
         return {'name':self.name,
@@ -106,10 +108,10 @@ class ParameterModel(QtCore.QAbstractItemModel):
         self.historyPush()
 
     def addParameter(self, name:str, value:float, lbound:float, ubound:float, fittable:bool, lbound_enabled:bool=False,
-                     ubound_enabled:bool=False):
+                     ubound_enabled:bool=False, description:str=''):
         self.beginInsertRows(QtCore.QModelIndex(), len(self._data), len(self._data))
         self._data.append(Parameter(name, value, 0, lbound, ubound, fittable, lbound_enabled=lbound_enabled,
-                                    ubound_enabled=ubound_enabled))
+                                    ubound_enabled=ubound_enabled, description=description))
         self.endInsertRows()
 
     def parameter(self, index:int) -> Parameter:
@@ -179,6 +181,8 @@ class ParameterModel(QtCore.QAbstractItemModel):
     def data(self, index: QtCore.QModelIndex, role: int = ...):
         if role == QtCore.Qt.CheckStateRole:
             if index.column()==0:
+                if not self._data[index.row()].fittable:
+                    return None
                 return [QtCore.Qt.Unchecked, QtCore.Qt.Checked][not self._data[index.row()].fixed]
             elif index.column()==1:
                 return [QtCore.Qt.Unchecked, QtCore.Qt.Checked][self._data[index.row()].lbound_enabled]
@@ -243,6 +247,8 @@ class ParameterModel(QtCore.QAbstractItemModel):
                     return None
                     #return QtGui.QColor('green')
             return None
+        elif role == QtCore.Qt.ToolTipRole:
+            return self._data[index.row()].description
         return None
 
     def setData(self, index: QtCore.QModelIndex, value: Any, role: int = ...):
