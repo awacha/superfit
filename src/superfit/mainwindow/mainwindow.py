@@ -111,7 +111,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 f.write('===============\nFitting results\n===============\n\n*Date*: {}\n\n'.format(datetime.datetime.now()))
                 f.write('*superfit version:* {}\n\n'.format(pkginfo.get_metadata('superfit').version))
                 f.write('*fffs version:* {}\n\n'.format(pkginfo.get_metadata('fffs').version))
-                f.write('.. |fitcurve| image:: {}\n    :width: 100%\n'.format(os.path.join(td, 'report.png')))
+                f.write('.. |fitcurve| image:: report.png\n    :width: 100%\n')
                 f.write('\nGraph\n=====\n|fitcurve|\n')
 #                f.write('.. figure:: {}\n'.format(os.path.join(td, 'report.png')))
 #                f.write('   :alt: fit curve\n\n')
