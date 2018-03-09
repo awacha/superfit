@@ -98,8 +98,8 @@ class ParameterModel(QtCore.QAbstractItemModel):
         with open(filename, 'rb') as f:
             data=pickle.load(f)
         names = sorted([p['name'] for p in data])
-        if names != [p.name for p in self._data]:
-            raise ValueError('Incompatible parameter data file')
+        if set(names) != {p.name for p in self._data}:
+            raise ValueError('Incompatible parameter data file.')
         for p in self._data:
             dic=[d for d in data if d['name'] == p.name][0]
             p.fromDict(dic)
