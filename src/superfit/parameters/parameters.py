@@ -397,7 +397,8 @@ class ParameterView(QtWidgets.QWidget, Ui_Form):
         for p in self.func.parameters:
             self.model.addParameter(p.name, p.defaultvalue, p.lbound, p.ubound, p.fittable,
                                     lbound_enabled=np.isfinite(p.lbound),
-                                    ubound_enabled=np.isfinite(p.ubound))
+                                    ubound_enabled=np.isfinite(p.ubound),
+                                    description=p.description)
         self.model.dataChanged.connect(self.onDataChanged)
         self.model.historyChanged.connect(self.onHistoryChanged)
         self.historyHorizontalSlider.valueChanged.connect(self.onHistoryMoveRequest)
