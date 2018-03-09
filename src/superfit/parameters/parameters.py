@@ -64,20 +64,31 @@ def do_fitting(resultsqueue: multiprocessing.Queue,
             dx = dataset[:, 3]
         except IndexError:
             dx = np.ones_like(x)
-
+        logy = kwargs.pop('logy')
+        if logy:
+            idx = y>0
+            x = x[idx]
+            dx=dx[idx]
+            dy=dy[idx]
+            y=y[idx]
+            dy = dy/y
+            y=np.log(y)
         lbounds = np.array(lbounds)
         ubounds = np.array(ubounds)
         lsq_kwargs = kwargs
 
-        def fitfunc(params: np.ndarray, param_init, free, x, y, dy, function):
+        def fitfunc(params: np.ndarray, param_init, free, x, y, dy, logy, function):
             param_init[free] = params
-            return (y - function(x, *param_init)) / dy
+            if not logy:
+                return (y - function(x, *param_init)) / dy
+            else:
+                return (y - np.log(function(x, *param_init)))/dy
 
         resultsqueue.put_nowait(('started', None))
         result = scipy.optimize.least_squares(
             fitfunc, param_init[free],
             bounds=(lbounds[free], ubounds[free]),
-            args=(param_init, free, x, y, dy, function),
+            args=(param_init, free, x, y, dy, logy, function),
             **lsq_kwargs
         )
         resultsqueue.put_nowait(('result', result))

@@ -14,72 +14,10 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="1">
-    <widget class="QDoubleSpinBox" name="xtolDoubleSpinBox">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Tolerance for termination by the change of the independent variables&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The exact condition depends on the method used (&lt;span style=&quot; font-style:italic;&quot;&gt;x&lt;/span&gt; denotes the vector of the fitted parameters):&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ and ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(dx) &amp;lt; xtol * (xtol + norm(x))&lt;/span&gt;&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : &lt;span style=&quot; font-style:italic;&quot;&gt;Delta &amp;lt; xtol * norm(xs)&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;Delta&lt;/span&gt; is a trust-region radius and &lt;span style=&quot; font-style:italic;&quot;&gt;xs&lt;/span&gt; is the value of &lt;span style=&quot; font-style:italic;&quot;&gt;x&lt;/span&gt; scaled according to &lt;span style=&quot; font-style:italic;&quot;&gt;x_scale&lt;/span&gt; parameter&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="showGroupSeparator" stdset="0">
-      <bool>false</bool>
-     </property>
-     <property name="decimals">
-      <number>16</number>
-     </property>
-     <property name="singleStep">
-      <double>0.000001000000000</double>
-     </property>
-     <property name="value">
-      <double>0.000001000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0" colspan="2">
-    <widget class="QCheckBox" name="jacRescaleCheckBox">
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_6">
      <property name="text">
-      <string>Rescale parameters iteratively using the Jacobian</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QComboBox" name="jacobianComboBox">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Select the finite difference scheme for the numerical estimation of the Jacobian matrix&lt;/span&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;2-point: the default&lt;/li&gt;&lt;li&gt;3-point: more accurate, but requires twice as much operations&lt;/li&gt;&lt;li&gt;cs: uses complex steps, and while potentially the most accurate, it is applicable only when the fit function correctly handles complex inputs and can be analytically continued to the complex plane.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Method ‘lm’ always uses the ‘2-point’ scheme.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <item>
-      <property name="text">
-       <string>2-point</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>3-point</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>cs</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Jacobian method:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>xtol:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_5">
-     <property name="text">
-      <string>ftol:</string>
+      <string>gtol:</string>
      </property>
     </widget>
    </item>
@@ -90,12 +28,51 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Algorithm:</string>
+   <item row="5" column="1">
+    <widget class="QDoubleSpinBox" name="gtolDoubleSpinBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Tolerance for termination by the norm of the gradient&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The exact condition depends on a method used:&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(g_scaled, ord=inf) &amp;lt; gtol&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;g_scaled&lt;/span&gt; is the value of the gradient scaled to account for the presence of the bounds.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(g_free, ord=inf) &amp;lt; gtol&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;g_free&lt;/span&gt; is the gradient with respect to the variables which are not in the optimal state on the boundary.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : the maximum absolute value of the cosine of angles between columns of the Jacobian and the residual vector is less than &lt;span style=&quot; font-style:italic;&quot;&gt;gtol&lt;/span&gt;, or the residual vector is zero.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="decimals">
+      <number>16</number>
+     </property>
+     <property name="value">
+      <double>0.000001000000000</double>
      </property>
     </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>ftol:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QSpinBox" name="maxnfevSpinBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Maximum number of function evaluations before the termination&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The automatic choice depends on the method (n is the number of fitted parameters):&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ and ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;100 * n&lt;/span&gt;.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : &lt;span style=&quot; font-style:italic;&quot;&gt;100 * n * (n + 1)&lt;/span&gt; because ‘lm’ counts function calls in Jacobian estimation&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="specialValueText">
+      <string>automatic</string>
+     </property>
+     <property name="maximum">
+      <number>1000000</number>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item row="0" column="1">
     <widget class="QComboBox" name="algorithmComboBox">
@@ -117,6 +94,23 @@
        <string>lm</string>
       </property>
      </item>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>Max. number of func. evaluations:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QCheckBox" name="jacRescaleCheckBox">
+     <property name="text">
+      <string>Rescale parameters iteratively using the Jacobian</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item row="1" column="1">
@@ -161,34 +155,59 @@ p, li { white-space: pre-wrap; }
      </item>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_6">
-     <property name="text">
-      <string>gtol:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="QDoubleSpinBox" name="gtolDoubleSpinBox">
+   <item row="3" column="1">
+    <widget class="QDoubleSpinBox" name="xtolDoubleSpinBox">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Tolerance for termination by the norm of the gradient&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The exact condition depends on a method used:&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(g_scaled, ord=inf) &amp;lt; gtol&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;g_scaled&lt;/span&gt; is the value of the gradient scaled to account for the presence of the bounds.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(g_free, ord=inf) &amp;lt; gtol&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;g_free&lt;/span&gt; is the gradient with respect to the variables which are not in the optimal state on the boundary.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : the maximum absolute value of the cosine of angles between columns of the Jacobian and the residual vector is less than &lt;span style=&quot; font-style:italic;&quot;&gt;gtol&lt;/span&gt;, or the residual vector is zero.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Tolerance for termination by the change of the independent variables&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The exact condition depends on the method used (&lt;span style=&quot; font-style:italic;&quot;&gt;x&lt;/span&gt; denotes the vector of the fitted parameters):&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ and ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;norm(dx) &amp;lt; xtol * (xtol + norm(x))&lt;/span&gt;&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : &lt;span style=&quot; font-style:italic;&quot;&gt;Delta &amp;lt; xtol * norm(xs)&lt;/span&gt;, where &lt;span style=&quot; font-style:italic;&quot;&gt;Delta&lt;/span&gt; is a trust-region radius and &lt;span style=&quot; font-style:italic;&quot;&gt;xs&lt;/span&gt; is the value of &lt;span style=&quot; font-style:italic;&quot;&gt;x&lt;/span&gt; scaled according to &lt;span style=&quot; font-style:italic;&quot;&gt;x_scale&lt;/span&gt; parameter&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="showGroupSeparator" stdset="0">
+      <bool>false</bool>
      </property>
      <property name="decimals">
       <number>16</number>
+     </property>
+     <property name="singleStep">
+      <double>0.000001000000000</double>
      </property>
      <property name="value">
       <double>0.000001000000000</double>
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="2">
-    <widget class="QCheckBox" name="weightWithErrorsCheckBox">
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_4">
      <property name="text">
-      <string>Weight with Y errors</string>
+      <string>xtol:</string>
      </property>
-     <property name="checked">
-      <bool>true</bool>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Algorithm:</string>
      </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QComboBox" name="jacobianComboBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Select the finite difference scheme for the numerical estimation of the Jacobian matrix&lt;/span&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;2-point: the default&lt;/li&gt;&lt;li&gt;3-point: more accurate, but requires twice as much operations&lt;/li&gt;&lt;li&gt;cs: uses complex steps, and while potentially the most accurate, it is applicable only when the fit function correctly handles complex inputs and can be analytically continued to the complex plane.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Method ‘lm’ always uses the ‘2-point’ scheme.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>2-point</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>3-point</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>cs</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item row="4" column="1">
@@ -204,38 +223,29 @@ p, li { white-space: pre-wrap; }
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QLabel" name="label_7">
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Max. number of func. evaluations:</string>
+      <string>Jacobian method:</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="1">
-    <widget class="QSpinBox" name="maxnfevSpinBox">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Maximum number of function evaluations before the termination&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The automatic choice depends on the method (n is the number of fitted parameters):&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘trf’ and ‘dogbox’ : &lt;span style=&quot; font-style:italic;&quot;&gt;100 * n&lt;/span&gt;.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For ‘lm’ : &lt;span style=&quot; font-style:italic;&quot;&gt;100 * n * (n + 1)&lt;/span&gt; because ‘lm’ counts function calls in Jacobian estimation&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   <item row="10" column="0" colspan="2">
+    <widget class="QCheckBox" name="weightWithErrorsCheckBox">
+     <property name="text">
+      <string>Weight with Y errors</string>
      </property>
-     <property name="specialValueText">
-      <string>automatic</string>
-     </property>
-     <property name="maximum">
-      <number>1000000</number>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="9" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="9" column="0">
+    <widget class="QCheckBox" name="useLogYCheckBox">
+     <property name="text">
+      <string>Use log(Y) for fitting</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-    </spacer>
+    </widget>
    </item>
   </layout>
  </widget>

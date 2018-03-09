@@ -19,6 +19,7 @@ class LSQAlgorithmSelector(QtWidgets.QWidget, Ui_Form):
         self.maxnfevSpinBox.valueChanged.connect(self.onParameterChanged)
         self.jacRescaleCheckBox.toggled.connect(self.onParameterChanged)
         self.weightWithErrorsCheckBox.toggled.connect(self.onParameterChanged)
+        self.useLogYCheckBox.toggled.connect(self.onParameterChanged)
         self.xtolDoubleSpinBox.setValue(1e-8)
         self.ftolDoubleSpinBox.setValue(1e-8)
         self.gtolDoubleSpinBox.setValue(1e-8)
@@ -39,4 +40,5 @@ class LSQAlgorithmSelector(QtWidgets.QWidget, Ui_Form):
                   'max_nfev':max_nfev,
                   'x_scale':[1.0, 'jac'][self.jacRescaleCheckBox.isChecked()],
                   'dy_weight':self.weightWithErrorsCheckBox.isChecked(),
+                  'logy':self.useLogYCheckBox.isChecked()
         }
